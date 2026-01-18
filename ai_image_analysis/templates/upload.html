@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %} AI画像分析 {% endblock %}
+
+{% block header %} AI画像分析 {% endblock %}
+
+{% block style %}
+
+{{ super() }}
+
+/* アニメーション全体のスタイル */
+        .loading-animation {
+            text-align: center;
+            margin-top: 20px;
+            display: none; /* 初期状態では非表示 */
+        }
+
+        /* スピナーアイコンのスタイル */
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            display: inline-block;
+        }
+
+        /* スピナーアニメーション */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* テキストの点滅アニメーション */
+        .loading-text {
+            font-size: 20px;
+            color: #555;
+            margin-top: 10px;
+            animation: blink 1s linear infinite;
+        }
+
+        /* 点滅アニメーションのキー */
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+{% endblock %}
+
+
+
+
+{% block container %}
+<div class="container">
+    <form id="upload-form" method="POST" action="{{ url_for('ai_image_analysis.index') }}" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.file.label }} 
+            {{ form.file(class="form-control") }}
+            {% for error in form.file.errors %}
+                <div class="text-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+
+    <!-- 処理中の表示 -->
+    <div id="loading" class="loading-animation">
+        <div class="spinner"></div>
+        <div class="loading-text">ファイルを処理中です。お待ちください...</div>
+    </div>
+</div>
+
+<script>
+  document.getElementById('upload-form').onsubmit = function(event) {
+      event.preventDefault(); // 通常のフォーム送信を無効化
+
+      // 処理中の表示を有効化
+      document.getElementById('loading').style.display = 'block';
+
+      // フォームデータを作成
+      var formData = new FormData(this);
+
+      // 非同期でファイルを送信
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '{{ url_for('ai_image_analysis.index') }}', true);
+
+      // ファイル処理が完了した時の処理
+      xhr.onload = function() {
+          if (xhr.status === 200) {
+              window.location.href = '{{ url_for("ai_image_analysis.user_maintenance") }}'; // 処理成功時にリダイレクト
+          } else {
+              // エラー時にai_image_analysis.error_msgを1回だけ呼び出し
+              window.location.href = '{{ url_for('ai_image_analysis.error_msg') }}';
+          }
+      };
+
+      // ファイル処理を開始
+      xhr.send(formData);
+  };
+</script>
+
+{% endblock %}

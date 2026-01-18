@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ログイン</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 800px; /* 最大幅を設定して中央寄せ */
+            margin: 0 auto; /* 左右のスペースを均等に */
+        }
+        .btn {
+            width: 100%; /* ボタンの幅を親要素に合わせる */
+        }
+        .title {
+            font-size: 1.5rem; /* タイトルを小さくして一行に収まるように */
+        }
+        .contact-info {
+            font-size: 0.8rem; /* 連絡先のフォントサイズをさらに小さく */
+            margin-top: 0.5rem; /* タイトルとの間に少し間隔を空ける */
+            text-align: right; /* 連絡先を右端に配置 */
+        }
+        .content {
+            margin-top: 20px; /* 上側のスペースを調整 */
+        }
+        .full-height {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* 縦方向の中央寄せを削除 */
+            min-height: 100vh; /* 画面全体の高さを確保 */
+        }
+        .admin-btn {
+            font-size: 0.5rem; /* 最小のフォントサイズ */
+            padding: 0.1rem 0.3rem; /* 小さいパディング */
+        }
+    </style>
+</head>
+
+
+<body>
+    <div class="container">
+        <form method="POST">
+            <label for="password">パスワード:</label>
+            <input type="password" id="password" name="password">
+            <button type="submit">ログイン</button>
+        </form>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- フッター -->
+<footer>
+ <div class="container">
+   <div class="d-flex flex-column align-items-start">
+     <a href="{{ url_for('index') }}" class="stylish-link">トップメニューに戻る</a>
+     <a href="mailto:akio.iino.uk@gmail.com" class="stylish-link">お問い合わせ: akio.iino.uk@gmail.com</a>
+   </div>
+ </div>
+</footer>
+
+</body>
+</html>

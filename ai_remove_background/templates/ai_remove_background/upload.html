@@ -1,0 +1,58 @@
+{% extends "ai_remove_background/base.html" %}
+
+{% block title %}
+    AI背景除去アップロード
+{% endblock %}
+
+{% block header %}
+    AI背景除去 - 画像アップロード
+{% endblock %}
+
+{% block container %}
+<div class="container mt-4">
+    <h2>画像をアップロードして背景を除去します</h2>
+
+    <!-- フォームのエラーメッセージを表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mt-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- アップロードフォーム -->
+    <form method="POST" enctype="multipart/form-data" onsubmit="showSpinner()">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.file.label(class="form-label") }}
+            {{ form.file(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            <button type="submit" class="btn btn-primary">アップロード</button>
+        </div>
+    </form>
+
+    <!-- スピナー -->
+    <div id="loading-spinner" class="mt-3" style="display:none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>画像を処理中です...</p>
+    </div>
+</div>
+
+<script>
+    function showSpinner() {
+        document.getElementById('loading-spinner').style.display = 'block';
+    }
+</script>
+{% endblock %}
+
+{% block footer %}
+    {{ super() }}
+{% endblock %}

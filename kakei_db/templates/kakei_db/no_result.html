@@ -1,0 +1,11 @@
+{% extends "kakei_db/base.html" %}
+
+{% block title %}情報が見つかりません{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">情報が見つかりません</h1>
+    <p>指定されたDB名: <strong>{{ db_name }}</strong> と ID: <strong>{{ id }}</strong> に該当するデータが見つかりませんでした。</p>
+    <button onclick="history.back()" class="btn btn-secondary mt-4">← 戻る</button>
+</div>
+{% endblock %}

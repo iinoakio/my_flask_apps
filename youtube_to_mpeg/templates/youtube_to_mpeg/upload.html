@@ -1,0 +1,64 @@
+{% extends "youtube_to_mpeg/base.html" %}
+
+{% block title %}
+Youtubeの動画DL
+{% endblock %}
+
+{% block header %}
+Youtubeの動画DL
+{% endblock %}
+
+{% block container %}
+<div class="container">
+    <!-- フラッシュメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" novalidate>
+        {{ form.csrf_token }}
+        <!-- テキスト入力フィールド -->
+        <div class="mb-3">
+            {{ form.text.label }} 
+            {{ form.text(class="form-control", required=True, maxlength=300) }}
+        </div>
+
+                <!-- ここに出力形式の選択を入れる -->
+        <div class="mb-3">
+        <label class="form-label">出力形式</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="format" id="fmt-mp4" value="mp4" checked>
+            <label class="form-check-label" for="fmt-mp4">動画（MP4）</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="format" id="fmt-mp3" value="mp3">
+            <label class="form-check-label" for="fmt-mp3">音声（MP3）</label>
+        </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" aria-label="動画をDL" onclick="showSpinner()">ファイルをDL</button>
+    </form>
+
+    <!-- 処理中のスピナー表示 -->
+    <div id="loading-spinner" style="display:none;">
+        <p>Youtubeからファイルを作成中です...</p>
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        }
+    </script>
+</div>
+{% endblock %}

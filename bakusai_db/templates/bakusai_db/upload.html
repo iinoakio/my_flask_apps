@@ -1,0 +1,51 @@
+{% extends "bakusai_db/base.html" %}
+
+{% block title %}
+バクサイＤＢ
+{% endblock %}
+
+{% block header %}
+バクサイＤＢ
+{% endblock %}
+
+{% block container %}
+<div class="container">
+    <!-- フラッシュメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" novalidate>
+        {{ form.csrf_token }}
+        <!-- テキスト入力フィールド -->
+        <div class="mb-3">
+            {{ form.text.label }} 
+            {{ form.text(class="form-control", required=True, maxlength=300) }}
+        </div>
+
+        <button type="submit" class="btn btn-primary" aria-label="動画をDL" onclick="showSpinner()">ＤＢを生成</button>
+    </form>
+
+    <!-- 処理中のスピナー表示 -->
+    <div id="loading-spinner" style="display:none;">
+        <p>ＤＢを作成中です...</p>
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        }
+    </script>
+</div>
+{% endblock %}

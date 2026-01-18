@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %} Image Analysis {% endblock %}
+{% block header %} 画像分析結果 {% endblock %}
+
+{% block style %}
+
+{{ super() }}
+
+/* アニメーション全体のスタイル */
+.loading-animation {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* スピナーアイコンのスタイル */
+.spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    display: inline-block;
+}
+
+/* スピナーアニメーション */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* テキストの点滅アニメーション */
+.loading-text {
+    font-size: 20px;
+    color: #555;
+    margin-top: 10px;
+    animation: blink 1s linear infinite;
+}
+
+/* 点滅アニメーションのキー */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* 戻るボタンのスタイル */
+.back-button {
+    font-size: 0.8rem; /* 小さなフォントサイズ */
+    margin-top: -10px; /* タイトルとの間隔を縮める */
+    margin-bottom: 20px;
+    display: inline-block;
+    background: none;
+    border: none;
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.back-button:hover {
+    color: #0056b3;
+}
+
+{% endblock %}
+
+{% block container %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12 text-center">
+            <h2 class="my-4">画像分析結果</h2>
+
+            <!-- ボタンに変更 -->
+            <button class="btn btn-secondary btn-sm mb-4" onclick="location.href='{{ url_for('ai_image_analysis.index') }}'">← 戻る</button>
+
+            <div id="loading" class="loading-animation">
+                <div class="spinner"></div>
+                <div class="loading-text">処理中です。お待ちください</div>
+            </div>
+            <div id="result" style="display: none;">
+                <p class="lead">{{ ai_msg }}</p>
+                <img src="{{ session['image_url'] }}" alt="サンプル画像" class="img-fluid rounded mx-auto d-block" style="max-width: 50%;">
+                <br>
+                
+                <button id="backButton" onclick="location.href='{{ url_for('ai_image_analysis.index') }}'" class="btn btn-primary">トップに戻る</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        // ボタンを無効化
+        document.getElementById('backButton').disabled = true;
+
+        // AI分析を非同期で取得
+        fetch('{{ url_for("ai_image_analysis.get_ai_analysis") }}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('backButton').disabled = false; // ボタンを有効化
+
+                if (data.error) {
+                    document.getElementById('result').innerHTML = '<p class="lead">' + data.error + '</p>';
+                } else {
+                    document.getElementById('result').innerHTML = '<p class="lead">' + data.result + '</p>' +
+                        '<img src="{{ session["image_url"] }}" alt="サンプル画像" class="img-fluid rounded mx-auto d-block" style="max-width: 50%;">';
+                }
+                document.getElementById('result').style.display = 'block';
+            });
+    }
+</script>
+
+{% endblock %}

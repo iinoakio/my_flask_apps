@@ -1,0 +1,92 @@
+{% extends "bakusai_db/base.html" %}
+
+{% block title %}バクサイＤＢの結果{% endblock %}
+
+{% block header %}バクサイＤＢの結果{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <!-- 戻るボタンを表の上に追加 -->
+    <div class="text-left mb-2">
+        <button onclick="location.href='{{ url_for('bakusai_db.index') }}'" class="btn btn-secondary btn-sm">← 戻る</button>
+        <button id="copyButton" class="btn btn-success btn-sm">コピー</button>
+    </div>
+
+     <!-- db_name と person の値を表示 -->
+     <p><strong>検索:</strong> {{ db_name }} - {{ person }}</p>
+ 
+     <!-- 検索結果の個数を表示 -->
+     <p><strong>結果の件数:</strong> {{ results|length }} 件</p>
+ 
+    
+     {% if results %}
+     <table class="table table-striped">
+         <thead>
+             <tr>
+                <th>データベース</th>
+                <th>ID</th>
+                 <th>日付</th>
+                 <th>内容</th>
+             </tr>
+         </thead>
+         <tbody>
+             {% for row in results %}
+                 <tr>
+                    <td>{{ row[0][:3] ~ row[0][-2:] if row[0]|length > 5 else row[0] }}</td>
+                    <td><a href="{{ url_for('bakusai_db.detail', db_name=row[0], id=row[1]) }}">{{ row[1] }}</a></td>
+                     <td>{{ row[2] }}</td>
+                     <td>{{ row[4]|replace(person, '<span style="color:red;">' ~ person ~ '</span>')|safe }}</td>
+                 </tr>
+             {% endfor %}
+         </tbody>
+     </table>
+ {% else %}
+     <p>該当するデータがありません。</p>
+ {% endif %}
+
+    <!-- トップに戻るボタン -->
+    <div class="text-center">
+        <a href="{{ url_for('bakusai_db.index') }}" class="btn btn-primary">別のDBを生成する</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById("copyButton").addEventListener("click", function () {
+        // テーブル要素を取得
+        const table = document.querySelector("table");
+
+        if (!table) {
+            alert("コピーするデータがありません。");
+            return;
+        }
+
+        // テーブルの内容を文字列に変換
+        let textToCopy = "";
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("th, td");
+            const rowText = Array.from(cells).map(cell => cell.innerText).join("\t");
+            textToCopy += rowText + "\n";
+        });
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                alert("検索結果をクリップボードにコピーしました！");
+            })
+            .catch(err => {
+                console.error("コピーに失敗しました: ", err);
+                alert("コピーに失敗しました。");
+            });
+    });
+</script>
+
+{% endblock %}
+
+
+
+
+{% block footer %}
+  {{ super() }}  <!-- base.html のフッターをそのまま使用 -->
+{% endblock %}
+

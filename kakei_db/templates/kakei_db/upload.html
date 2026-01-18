@@ -1,0 +1,134 @@
+{% extends "kakei_db/base.html" %}
+
+{% block title %}
+家計ＤＢ
+{% endblock %}
+
+{% block header %}
+家計ＤＢ
+{% endblock %}
+
+{% block container %}
+<div class="container">
+    <!-- フラッシュメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" novalidate>
+        {{ form.csrf_token }}
+        <!-- 集計期間入力フィールド -->
+        <div>
+            <p><strong>集計期間:</strong></p>
+            <label><input type="radio" name="period" value="this_month" checked onchange="toggleMonthSelect()"> 当月</label><br>
+    
+            <label><input type="radio" name="period" value="same_month_past" onchange="toggleMonthSelect()"> 同月過去</label>
+            （
+            <span id="monthSelectWrapper" style="display: none;">
+                <select name="same_month">
+                    {% for m in range(1, 13) %}
+                    <option value="{{ '%02d' % m }}">{{ m }}月</option>
+                    {% endfor %}
+                </select>
+            </span>
+            ）<br>
+    
+            <label><input type="radio" name="period" value="past_3_months" onchange="toggleMonthSelect()"> 過去3か月</label><br>
+            <label><input type="radio" name="period" value="past_1_year" onchange="toggleMonthSelect()"> 過去1年</label><br>
+            <label><input type="radio" name="period" value="past_2_years" onchange="toggleMonthSelect()"> 過去2年</label><br>
+            <label><input type="radio" name="period" value="all" onchange="toggleMonthSelect()"> 全期間</label>
+        </div>
+    </br>
+        <div>
+            <p><strong>大項目（複数選択可）:</strong></p>
+            {% for cat in categories %}
+              <label>
+                <input type="checkbox" name="categories" value="{{ cat }}" onchange="updateSubcategories()">
+                {{ cat }}
+              </label><br>
+            {% endfor %}
+        </div>
+    </br>  
+
+        <!-- 中項目（大項目に応じて動的に出現） -->
+        <div id="subcategory-wrapper" style="display: none; margin-top: 10px;">
+            <p><strong>中項目（複数選択可）:</strong></p>
+            <div id="subcategory-checkboxes">
+            <!-- JSでcheckboxを動的に追加 -->
+            </div>
+        </div>
+    </br>
+        <button type="submit" class="btn btn-primary" onclick="showSpinner()">ＤＢを生成</button>
+    </form>
+
+    <!-- 処理中のスピナー表示 -->
+    <div id="loading-spinner" style="display:none;">
+        <p>ＤＢを作成中です...</p>
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        }
+    </script>
+    <script>
+        function toggleMonthSelect() {
+            const period = document.querySelector('input[name="period"]:checked').value;
+            const monthWrapper = document.getElementById('monthSelectWrapper');
+            monthWrapper.style.display = (period === 'same_month_past') ? 'inline' : 'none';
+        }
+        window.onload = toggleMonthSelect;  // 初期表示にも対応
+    </script>
+
+<script>
+    const subcategoryMap = {{ subcategories_map | tojson }};
+    
+    function updateSubcategories() {
+      const checkboxes = document.querySelectorAll('input[name="categories"]');
+      const selectedCategories = Array.from(checkboxes)
+          .filter(cb => cb.checked)
+          .map(cb => cb.value);
+    
+      const wrapper = document.getElementById('subcategory-wrapper');
+      const container = document.getElementById('subcategory-checkboxes');
+    
+      if (selectedCategories.length === 0) {
+        wrapper.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+    
+      // 中項目候補をまとめる（重複除去）
+      const subOptions = new Set();
+      selectedCategories.forEach(cat => {
+        (subcategoryMap[cat] || []).forEach(sub => subOptions.add(sub));
+      });
+    
+      // チェックボックスとして出力
+      container.innerHTML = '';
+      Array.from(subOptions).sort().forEach(sub => {
+        const label = document.createElement('label');
+        label.innerHTML = `
+          <input type="checkbox" name="subcategory" value="${sub}">
+          ${sub}
+        `;
+        container.appendChild(label);
+        container.appendChild(document.createElement('br'));
+      });
+    
+      wrapper.style.display = 'block';
+    }
+    </script>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "kakei_db/base.html" %}
+
+{% block title %}家計DBのタブ一覧{% endblock %}
+
+{% block header %}家計DBのタブ一覧{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <!-- 戻るボタンを表の上に追加 -->
+    <div class="text-left mb-2">
+        <button onclick="location.href='{{ url_for('kakei_db.index') }}'" class="btn btn-secondary btn-sm">← 戻る</button>
+        <button id="copyButton" class="btn btn-success btn-sm">コピー</button>
+    </div>
+
+    <!-- データベースの作成日時を表示 -->
+    <p><strong>データベース作成日時:</strong> {{ created_at }}</p>
+
+    <!-- タブ一覧の件数を表示 -->
+    <p><strong>データベース内のタブ数:</strong> {{ tab_sheets|length }} 件</p>
+    
+    {% if tab_sheets %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>タブ名</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sheet in tab_sheets %}
+                <tr>
+                    <td>{{ sheet }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>データがありません。</p>
+    {% endif %}
+
+    <!-- トップに戻るボタン -->
+    <div class="text-center">
+        <a href="{{ url_for('bakusai_db.index') }}" class="btn btn-primary">別のDBを検索する</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById("copyButton").addEventListener("click", function () {
+        // テーブル要素を取得
+        const table = document.querySelector("table");
+
+        if (!table) {
+            alert("コピーするデータがありません。");
+            return;
+        }
+
+        // テーブルの内容を文字列に変換
+        let textToCopy = "";
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("th, td");
+            const rowText = Array.from(cells).map(cell => cell.innerText).join("\t");
+            textToCopy += rowText + "\n";
+        });
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                alert("タブ一覧をクリップボードにコピーしました！");
+            })
+            .catch(err => {
+                console.error("コピーに失敗しました: ", err);
+                alert("コピーに失敗しました。");
+            });
+    });
+</script>
+
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}  <!-- base.html のフッターをそのまま使用 -->
+{% endblock %}

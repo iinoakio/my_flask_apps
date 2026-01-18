@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %} 管理者メニュー {% endblock %}
+{% block header %} 管理者メニュー {% endblock %}
+
+{% block container %}
+<div class="container">
+    <!-- 戻るボタンを表の上に追加 -->
+    <div class="text-left mb-2">
+        <button onclick="location.href='{{ url_for('ai_image_analysis.index') }}'" class="btn btn-secondary btn-sm">← 戻る</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>日時</th>
+                    <th>AI分析結果</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in history %}
+                <tr>
+                    <td><a href="{{ row[3] }}" target="_blank">{{ row[0] }}</a></td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[4] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

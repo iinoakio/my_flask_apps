@@ -1,0 +1,33 @@
+{% extends "bakusai_db/base.html" %}
+
+{% block title %}{{ db_name }} のデータ一覧{% endblock %}
+{% block header %}{{ db_name }} のデータ一覧{% endblock %}
+
+{% block container %}
+<div class="container mt-4">
+    <a href="javascript:history.back()" class="btn btn-secondary btn-sm">← 戻る</a>
+
+    <h5 class="mt-3">表示件数: {{ records|length }}</h5>
+    {% if records %}
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>ID</th><th>日付</th><th>時刻</th><th>内容</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in records %}
+            <tr>
+                <td>{{ row[1] }}</td>
+                <td>{{ row[2] }}</td>
+                <td>{{ row[3] }}</td>
+                <td>{{ row[4] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>データが見つかりませんでした。</p>
+    {% endif %}
+</div>
+{% endblock %}

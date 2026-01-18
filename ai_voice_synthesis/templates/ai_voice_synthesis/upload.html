@@ -1,0 +1,66 @@
+{% extends "ai_voice_synthesis/base.html" %}
+
+{% block title %}
+AI音声合成
+{% endblock %}
+
+{% block header %}
+AI音声合成
+{% endblock %}
+
+{% block container %}
+<div class="container">
+    <h1>テキストから音声合成</h1>
+
+    <!-- フラッシュメッセージの表示 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.csrf_token }}
+
+        <!-- テキスト入力フィールド -->
+        <div class="mb-3">
+            {{ form.text.label }} 
+            {{ form.text(class="form-control", required=True, maxlength=300) }}
+        </div>
+
+        <!-- 性別選択ラジオボタン（文章なし） -->
+        <div class="mb-3">
+            <div class="form-check">
+                <input type="radio" id="male" name="voice_gender" value="male" class="form-check-input" checked>
+                <label for="male" class="form-check-label">男性</label>
+            </div>
+            <div class="form-check">
+                <input type="radio" id="female" name="voice_gender" value="female" class="form-check-input">
+                <label for="female" class="form-check-label">女性</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" aria-label="テキストを音声に変換" onclick="showSpinner()">音声合成</button>
+    </form>
+
+    <!-- 処理中のスピナー表示 -->
+    <div id="loading-spinner" style="display:none;">
+        <p>音声を合成中です...</p>
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('loading-spinner').style.display = 'block';
+        }
+    </script>
+</div>
+{% endblock %}

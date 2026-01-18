@@ -1,0 +1,410 @@
+{% extends "kakei_db/base.html" %}
+
+{% block title %}家計ＤＢの結果{% endblock %}
+
+{% block header %}家計ＤＢの結果{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <!-- 戻るボタンを表の上に追加 -->
+    <div class="text-left mb-2">
+        <button onclick="location.href='{{ url_for('kakei_db.index') }}'" class="btn btn-secondary btn-sm">← 戻る</button>
+        <button id="copyButton" class="btn btn-success btn-sm">コピー</button>
+    </div>
+  
+     {% if results %}
+    <h2>■ 集計結果：{{ label }}</h2>
+
+    <div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+        <tr>
+            <th>年月</th>
+            <th class="text-end">合計金額</th>
+        </tr>
+        </thead>
+        <tbody id="summaryBody">
+        {% for year, month, total in results %}
+        <tr class="summary-row"
+            data-year="{{ year }}"
+            data-month="{{ '%02d'|format(month|int) }}"
+            {% if selected_majors %} data-majors="{{ selected_majors|join(',') }}"{% endif %}
+            {% if selected_minors %} data-minors="{{ selected_minors|join(',') }}"{% endif %}>
+            <td><a href="#" class="open-drill">{{ year }}年{{ month|int }}月</a></td>
+            <td class="text-end">
+            <a href="#" class="show-details">{{ "{:,}".format(total) }} 円</a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% else %}
+        <p>該当するデータがありません。</p>
+    {% endif %}
+
+    <!-- トップに戻るボタン -->
+    <div class="text-center">
+        <a href="{{ url_for('kakei_db.index') }}" class="btn btn-primary">戻る</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById("copyButton").addEventListener("click", function () {
+        // テーブル要素を取得
+        const table = document.querySelector("table");
+
+        if (!table) {
+            alert("コピーするデータがありません。");
+            return;
+        }
+
+        // テーブルの内容を文字列に変換
+        let textToCopy = "";
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("th, td");
+            const rowText = Array.from(cells).map(cell => cell.innerText).join("\t");
+            textToCopy += rowText + "\n";
+        });
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                alert("検索結果をクリップボードにコピーしました！");
+            })
+            .catch(err => {
+                console.error("コピーに失敗しました: ", err);
+                alert("コピーに失敗しました。");
+            });
+    });
+</script>
+
+<style>
+  .expander-row td { background:#fafafa; padding:12px 16px; border-top:none; }
+  .loading { font-size:.9rem; opacity:.7; }
+  .text-end { text-align:end; }
+  .nowrap { white-space:nowrap; }
+</style>
+
+<style>
+  /* 2カラムのドリルダウン用レイアウト */
+  .drill-shell { display:flex; gap:16px; }
+  .pane-major  { flex: 0 0 38%; min-width: 260px; }
+  .pane-right  { flex: 1 1 auto; }
+  .major-active > td:first-child { font-weight: 600; }
+  .expander-row td { background:#fafafa; padding:12px 16px; border-top:none; }
+  .loading { font-size:.9rem; opacity:.7; }
+  .text-end { text-align:end; }
+  .nowrap { white-space:nowrap; }
+</style>
+
+<script>
+(function(){
+  const tbody = document.getElementById('summaryBody');
+
+  function yen(n){ return (n||0).toLocaleString('ja-JP'); }
+
+  function buildExpanderRow(colspan){
+    const tr = document.createElement('tr');
+    tr.className = 'expander-row';
+    const td = document.createElement('td');
+    td.colSpan = colspan;
+    td.innerHTML = `<div class="loading">読み込み中…</div>`;
+    tr.appendChild(td);
+    return tr;
+  }
+
+  // 事前選択（大項目/中項目）をサマリ行から取得
+  function pickFiltersFromRow(row){
+    return {
+      majors: (row.dataset.majors||'').split(',').filter(Boolean),
+      minors: (row.dataset.minors||'').split(',').filter(Boolean),
+    };
+  }
+
+  // /drilldown を叩く（majors/minors も常に付ける）
+  async function fetchDrill({year, month, level, major, minor, majors, minors}){
+    const p = new URLSearchParams({year, month, level});
+    if (major) p.append('major', major);
+    if (minor) p.append('minor', minor);
+    (majors||[]).forEach(v => p.append('majors', v));
+    (minors||[]).forEach(v => p.append('minors', v));
+    const res = await fetch(`{{ url_for('kakei_db.drilldown') }}?` + p.toString());
+    if(!res.ok) throw new Error('取得に失敗');
+    return res.json();
+  }
+
+  // 2カラムのシェル（左：大項目一覧、右：中項目/明細）を用意
+  function renderShell(td, year, month){
+    td.innerHTML = `
+      <div class="drill-shell">
+        <div class="pane-major">
+          <div class="mb-2"><strong>${year}年${parseInt(month,10)}月：大項目内訳</strong></div>
+          <div id="paneMajorBody"></div>
+        </div>
+        <div class="pane-right">
+          <div class="mb-2 text-muted">左の大項目をクリックすると中項目が表示される</div>
+          <div id="paneRightBody"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 左ペイン：大項目一覧（クリックで右ペイン更新）
+  function renderMajorList(paneMajorBody, items){
+    let sum = 0;
+    const t = document.createElement('table');
+    t.className = 'table table-sm table-striped mb-0';
+    t.innerHTML = `
+      <thead><tr>
+        <th>大項目</th><th class="text-end">金額（円）</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot><tr><th class="text-end">合計</th><th id="sum" class="text-end"></th></tr></tfoot>
+    `;
+    const tb = t.querySelector('tbody');
+    items.forEach(r=>{
+      sum += (r.amount||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.major ?? ''}</td>
+        <td class="text-end">
+          <a href="#" class="drill-minor" data-major="${r.major}">${yen(r.amount||0)}</a>
+        </td>
+      `;
+      tb.appendChild(tr);
+    });
+    t.querySelector('#sum').textContent = yen(sum);
+    paneMajorBody.innerHTML = '';
+    paneMajorBody.appendChild(t);
+  }
+
+  // 右ペイン：中項目一覧（左はそのまま）
+  function renderMinorPane(paneRightBody, year, month, major, items){
+    let sum = 0;
+    const t = document.createElement('table');
+    t.className = 'table table-sm table-striped mb-0';
+    t.innerHTML = `
+      <thead><tr>
+        <th>中項目</th><th class="text-end">金額（円）</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot><tr><th class="text-end">合計</th><th id="sum" class="text-end"></th></tr></tfoot>
+    `;
+    const tb = t.querySelector('tbody');
+    items.forEach(r=>{
+      sum += (r.amount||0);
+      const tr = document.createElement('tr');
+      const name = r.minor ?? '';
+      const amt = yen(r.amount||0);
+      const cell = name
+        ? `<a href="#" class="drill-detail" data-major="${major}" data-minor="${name}">${amt}</a>`
+        : `<span class="text-muted">${amt}</span>`;
+      tr.innerHTML = `
+        <td>${name}</td>
+        <td class="text-end">${cell}</td>
+      `;
+      tb.appendChild(tr);
+    });
+    t.querySelector('#sum').textContent = yen(sum);
+    paneRightBody.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div><strong>${year}年${parseInt(month,10)}月：${major} の中項目内訳</strong></div>
+        <button class="btn btn-outline-secondary btn-sm back-major">← 大項目へ</button>
+      </div>
+    `;
+    paneRightBody.appendChild(t);
+  }
+
+  // 右ペイン：明細（右だけ差し替え）
+  function renderDetailPane(paneRightBody, year, month, major, minor, items){
+    let sum = 0;
+    const t = document.createElement('table');
+    t.className = 'table table-sm table-striped mb-0';
+    t.innerHTML = `
+      <thead><tr>
+        <th class="nowrap">日付</th><th>内容</th><th class="nowrap">大項目</th>
+        <th class="nowrap">中項目</th><th class="text-end nowrap">金額（円）</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot><tr><th colspan="4" class="text-end">合計</th><th id="sum" class="text-end"></th></tr></tfoot>
+    `;
+    const tb = t.querySelector('tbody');
+    items.forEach(r=>{
+      sum += (r.amount||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="nowrap">${r.date ?? ''}</td>
+        <td>${r.content ?? ''}</td>
+        <td class="nowrap">${r.major ?? ''}</td>
+        <td class="nowrap">${r.minor ?? ''}</td>
+        <td class="text-end nowrap">${yen(r.amount||0)}</td>
+      `;
+      tb.appendChild(tr);
+    });
+    t.querySelector('#sum').textContent = yen(sum);
+    paneRightBody.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div><strong>${year}年${parseInt(month,10)}月：${major} → ${minor} の明細（${items.length}件）</strong></div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm back-minor">← 中項目へ</button>
+          <button class="btn btn-outline-secondary btn-sm back-major">← 大項目へ</button>
+        </div>
+      </div>
+    `;
+    paneRightBody.appendChild(t);
+  }
+
+  function closeAnyOpen(){
+    const open = tbody.querySelector('.expander-row');
+    if (open) open.remove();
+    const opened = tbody.querySelector('.summary-row.opened');
+    if (opened) opened.classList.remove('opened');
+  }
+
+  // 年月 or 合計金額クリック → 左に大項目一覧、右は案内（大項目は残す）
+  tbody?.addEventListener('click', async (e)=>{
+    const a = e.target.closest('.open-drill, .show-details');
+    if(!a) return;
+    e.preventDefault();
+
+    const row = a.closest('.summary-row');
+    const already = row.classList.contains('opened');
+    if (already){ closeAnyOpen(); return; }
+
+    closeAnyOpen();
+    const expander = buildExpanderRow(row.children.length);
+    row.insertAdjacentElement('afterend', expander);
+    row.classList.add('opened');
+
+    const year  = row.dataset.year;
+    const month = row.dataset.month;
+    const {majors, minors} = pickFiltersFromRow(row);
+
+    try{
+      const resp = await fetchDrill({year, month, level:'major', majors, minors});
+      const td = expander.firstElementChild;
+      if (!resp.ok || !resp.items) { td.innerHTML = `<div class="text-muted">データなし</div>`; return; }
+
+      // 2カラムのシェル＋左に大項目一覧
+      renderShell(td, year, month);
+      const paneMajorBody = td.querySelector('#paneMajorBody');
+      renderMajorList(paneMajorBody, resp.items);
+
+      // 現在選択中の大項目を保持（戻る用）
+      expander.dataset.currentMajor = '';
+    }catch(err){
+      expander.firstElementChild.innerHTML = `<div class="text-danger">エラー：${err.message}</div>`;
+    }
+  });
+
+  // 大項目クリック → 右ペインに中項目一覧（左の大項目は残す）
+  document.addEventListener('click', async (e)=>{
+    const a = e.target.closest('.drill-minor');
+    if(!a) return;
+    e.preventDefault();
+
+    const expander = tbody.querySelector('.expander-row');
+    if(!expander) return;
+    const td = expander.firstElementChild;
+
+    const row = tbody.querySelector('.summary-row.opened');
+    const year  = row.dataset.year, month = row.dataset.month;
+    const {majors, minors} = pickFiltersFromRow(row);
+    const major = a.dataset.major;
+
+    const right = td.querySelector('#paneRightBody');
+    right.innerHTML = `<div class="loading">読み込み中…</div>`;
+
+    // 左の大項目リストで選択強調
+    td.querySelectorAll('.pane-major tbody tr').forEach(r=>r.classList.remove('major-active'));
+    a.closest('tr')?.classList.add('major-active');
+
+    try{
+      const resp = await fetchDrill({year, month, level:'minor', major, majors, minors});
+      if (!resp.ok || !resp.items) { right.innerHTML = `<div class="text-muted">データなし</div>`; return; }
+      renderMinorPane(right, year, month, major, resp.items);
+
+      expander.dataset.currentMajor = major;  // 選択された大項目を保持
+    }catch(err){
+      right.innerHTML = `<div class="text-danger">エラー：${err.message}</div>`;
+    }
+  });
+
+  // 中項目クリック → 右ペインを明細に置き換え（左は大項目のまま）
+  document.addEventListener('click', async (e)=>{
+    const a = e.target.closest('.drill-detail');
+    if(!a) return;
+    e.preventDefault();
+
+    const expander = tbody.querySelector('.expander-row');
+    if(!expander) return;
+    const td = expander.firstElementChild;
+
+    const row = tbody.querySelector('.summary-row.opened');
+    const year  = row.dataset.year, month = row.dataset.month;
+    const {majors, minors} = pickFiltersFromRow(row);
+    const major = a.dataset.major, minor = a.dataset.minor;
+
+    const right = td.querySelector('#paneRightBody');
+    right.innerHTML = `<div class="loading">読み込み中…</div>`;
+
+    try{
+      const resp = await fetchDrill({year, month, level:'detail', major, minor, majors, minors});
+      if (!resp.ok || !resp.items) { right.innerHTML = `<div class="text-muted">データなし</div>`; return; }
+      renderDetailPane(right, year, month, major, minor, resp.items);
+    }catch(err){
+      right.innerHTML = `<div class="text-danger">エラー：${err.message}</div>`;
+    }
+  });
+
+  // 戻る（右ペインのみ差し替え：左の大項目は消さない）
+  document.addEventListener('click', async (e)=>{
+    const toMajor = e.target.closest('.back-major');
+    const toMinor = e.target.closest('.back-minor');
+    if (!toMajor && !toMinor) return;
+    e.preventDefault();
+
+    const expander = tbody.querySelector('.expander-row');
+    if(!expander) return;
+    const td = expander.firstElementChild;
+    const right = td.querySelector('#paneRightBody');
+
+    const row = tbody.querySelector('.summary-row.opened');
+    const year  = row.dataset.year, month = row.dataset.month;
+    const {majors, minors} = pickFiltersFromRow(row);
+    const currentMajor = expander.dataset.currentMajor || '';
+
+    right.innerHTML = `<div class="loading">読み込み中…</div>`;
+    try{
+      if (toMajor) {
+        right.innerHTML = `<div class="text-muted">左の大項目をクリックすると中項目が表示される</div>`;
+      } else if (toMinor) {
+        if (!currentMajor){
+          right.innerHTML = `<div class="text-muted">大項目を選んでください</div>`;
+          return;
+        }
+        const resp = await fetchDrill({year, month, level:'minor', major: currentMajor, majors, minors});
+        renderMinorPane(right, year, month, currentMajor, resp.items || []);
+      }
+    }catch(err){
+      right.innerHTML = `<div class="text-danger">エラー：${err.message}</div>`;
+    }
+  });
+})();
+</script>
+
+
+
+
+{% endblock %}
+
+
+
+
+{% block footer %}
+  {{ super() }}  <!-- base.html のフッターをそのまま使用 -->
+{% endblock %}
+

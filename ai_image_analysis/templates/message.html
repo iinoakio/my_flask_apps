@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %} メッセージ {% endblock %}
+
+{% block header %} メッセージ {% endblock %}
+
+{% block container %}
+
+<div class="container text-center">
+    <h3>{{ session["error_msg"] }}</h3>
+    <br>
+    <!-- 戻るボタンをAI画像分析のトップページへのリンクに変更 -->
+    <a href="{{ url_for('ai_image_analysis.index') }}" class="btn btn-primary mt-3">戻る</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "bakusai_db/base.html" %}
+
+{% block title %}詳細情報{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <h1 class="mb-4">詳細情報 </h1>
+
+    {% if detail %}
+    <h2 class="mt-4">前後15件のデータ</h2>
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>データベース名</th>
+                <th>ID</th>
+                <th>日付</th>
+                <th>内容</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in surrounding_records %}
+            <tr {% if record[1]|string == detail[1]|string %} style="background-color: yellow; color:red; font-weight: bold;"{% endif %}>
+                <td>{{ record[0][:3] ~ record[0][-2:] if record[0]|length > 5 else record[0] }}</td>
+                <td><a href="{{ url_for('bakusai_db.detail', db_name=record[0], id=record[1]) }}">{{ record[1] }}</a></td>
+                <td>{{ record[2] }}</td>
+                <td>{{ record[4] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">該当するデータが見つかりませんでした。</div>
+    {% endif %}
+
+    <button onclick="history.back()" class="btn btn-secondary mt-4">← 戻る</button>
+</div>
+{% endblock %}

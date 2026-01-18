@@ -1,0 +1,18 @@
+{% extends "ai_remove_background/base.html" %}
+
+{% block title %}
+    管理者ログイン
+{% endblock %}
+
+{% block container %}
+<div class="container mt-4">
+    <h2>管理者ログイン</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="password" class="form-label">パスワード</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">ログイン</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "youtube_to_mpeg/base.html" %}
+
+{% block title %}Youtube動画ファイル化の結果{% endblock %}
+
+{% block header %}Youtube動画ファイル化の結果{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <h3 class="mb-4 text-center">{{ video_file }}</h1>
+
+    <!-- ダウンロードボタン -->
+    <div class="text-center mb-4">
+        <a href="{{ url_for('youtube_to_mpeg.static', filename='video/' ~ video_file) }}" download="{{ video_file }}" class="btn btn-success">
+            動画ファイルをダウンロード
+        </a>
+    </div>
+
+    <!-- トップに戻るボタン -->
+    <div class="text-center">
+        <a href="{{ url_for('youtube_to_mpeg.index') }}" class="btn btn-primary">別の動画を生成する</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}  <!-- base.html のフッターをそのまま使用 -->
+{% endblock %}

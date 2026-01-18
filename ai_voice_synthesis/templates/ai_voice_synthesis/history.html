@@ -1,0 +1,36 @@
+{% extends "ai_voice_synthesis/base.html" %}
+
+{% block title %} 管理者メニュー {% endblock %}
+{% block header %} 管理者メニュー {% endblock %}
+
+{% block container %}
+<div class="container">
+    <!-- 戻るボタンを表の上に追加 -->
+    <div class="text-left mb-2">
+        <button onclick="location.href='{{ url_for('ai_voice_synthesis.index') }}'" class="btn btn-secondary btn-sm">← 戻る</button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>日時</th>
+                    <th>入力テキスト</th>
+                    <th>音声ファイル</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in history %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td><a href="{{ url_for('ai_voice_synthesis.static', filename='audio/' + row[3]) }}" target="_blank">{{ row[3] }}</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

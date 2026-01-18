@@ -1,0 +1,35 @@
+{% extends "ai_voice_synthesis/base.html" %}
+
+{% block title %}AI音声合成結果{% endblock %}
+
+{% block header %}AI音声合成結果{% endblock %}
+
+{% block container %}
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">AI音声合成結果</h1>
+
+    <!-- 音声ファイルの再生 -->
+    <div class="text-center mb-4">
+        <audio controls>
+            <source src="{{ url_for('ai_voice_synthesis.static', filename='audio/' ~ audio_file) }}" type="audio/mp3">
+            お使いのブラウザはオーディオ要素をサポートしていません。
+        </audio>
+    </div>
+
+    <!-- ダウンロードボタン -->
+    <div class="text-center mb-4">
+        <a href="{{ url_for('ai_voice_synthesis.static', filename='audio/' ~ audio_file) }}" download="{{ audio_file }}" class="btn btn-success">
+            音声ファイルをダウンロード
+        </a>
+    </div>
+
+    <!-- トップに戻るボタン -->
+    <div class="text-center">
+        <a href="{{ url_for('ai_voice_synthesis.index') }}" class="btn btn-primary">別の音声を生成する</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}  <!-- base.html のフッターをそのまま使用 -->
+{% endblock %}
