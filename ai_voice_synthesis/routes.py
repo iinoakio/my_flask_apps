@@ -10,8 +10,9 @@ from openai import OpenAI, OpenAIError
 from . import ai_voice_synthesis_bp  # Blueprintをインポート
 
 # 環境変数からOpenAIのAPIキーを取得
-openai.api_key = os.getenv('OPENAI_API_KEY')
-client = OpenAI()
+
+#openai.api_key = os.getenv('OPENAI_API_KEY')
+#client = OpenAI()
 
 # 保存先ディレクトリの設定
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/audio')

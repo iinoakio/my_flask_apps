@@ -21,8 +21,9 @@ UPLOAD_FOLDER = './ai_image_analysis/static/images/'
 DATABASE = os.path.join(os.path.dirname(__file__), 'history.db')
 
 # OpenAI APIキーの設定
-openai.api_key = os.environ["OPENAI_API_KEY"]
-client = openai.OpenAI()
+
+#openai.api_key = os.environ["OPENAI_API_KEY"]
+#client = openai.OpenAI()
 
 # 認証に使用するパスワード
 HISTORY_PASSWORD = os.environ.get("HISTORY_PASSWORD", "Canon-01")
