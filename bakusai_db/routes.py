@@ -73,10 +73,11 @@ def tab_detail(db_name):
         conn = sqlite3.connect(BAKUSAI_DB)
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT * FROM data
-            WHERE tab_sheet = ?
-            ORDER BY date ASC, time ASC
-        """, (db_name,))
+		    SELECT tab_sheet, id, date, time, text
+		    FROM data
+		    WHERE tab_sheet = ?
+		    ORDER BY date ASC, time ASC, CAST(id AS INTEGER) ASC
+		""", (db_name,))
         records = cursor.fetchall()
     except sqlite3.Error as e:
         flash(f"データベースエラー: {e}", 'danger')
@@ -148,26 +149,39 @@ def detail(db_name, id):
 
         # 指定されたIDの詳細情報を取得
         query_detail = """
-            SELECT * FROM data
-            WHERE tab_sheet = ? AND id = ?
-        """
+		    SELECT tab_sheet, id, date, time, text
+		    FROM data
+		    WHERE tab_sheet = ? AND id = ?
+		"""
         cursor.execute(query_detail, (db_name, id))
         detail = cursor.fetchone()
 
         if detail:
             # 前後15件を取得
             query_surrounding = """
-                SELECT * FROM data
-                WHERE tab_sheet = ?
-                ORDER BY date ASC, time ASC
-                LIMIT 31 OFFSET (
-                    SELECT COUNT(*) FROM data
-                    WHERE tab_sheet = ? AND (date < ? OR (date = ? AND time < ?))
-                ) - 15
-            """
+			    SELECT tab_sheet, id, date, time, text
+			    FROM data
+			    WHERE tab_sheet = ?
+			    ORDER BY date ASC, time ASC, CAST(id AS INTEGER) ASC
+			    LIMIT 31 OFFSET MAX(
+			        (
+			            SELECT COUNT(*)
+			            FROM data
+			            WHERE tab_sheet = ?
+			              AND (
+			                    date < ?
+			                    OR (
+			                        date = ?
+			                        AND time < ?
+			                    )
+			              )
+			        ) - 15,
+			        0
+			    )
+			"""
             cursor.execute(query_surrounding, (
-                db_name, db_name, detail[2], detail[2], detail[3]
-            ))
+                    db_name, db_name, detail[2], detail[2], detail[3]
+                ))
             surrounding_records = cursor.fetchall()
 
     except sqlite3.Error as e:
@@ -193,10 +207,11 @@ def search_bakusai_db(db_name, person):
     """
     results = []
     query = """
-        SELECT * FROM data
-        WHERE tab_sheet LIKE ? AND text LIKE ?
-        ORDER BY date ASC, time ASC
-    """
+	    SELECT tab_sheet, id, date, time, text
+	    FROM data
+	    WHERE tab_sheet LIKE ? AND text LIKE ?
+	    ORDER BY date ASC, time ASC, CAST(id AS INTEGER) ASC
+	"""
 
     try:
         # データベースに接続
